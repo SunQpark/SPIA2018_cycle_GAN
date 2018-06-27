@@ -12,7 +12,7 @@ from logger import Logger
 from tensorboardX import SummaryWriter
 
 logging.basicConfig(level=logging.INFO, format='')
-writer = SummaryWriter('/data1/home/hmroh/projects2018/SunQ/runs')
+writer = SummaryWriter('saved/log')
 
 
 parser = argparse.ArgumentParser(description='PyTorch Template')
