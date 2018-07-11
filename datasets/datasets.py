@@ -3,9 +3,9 @@ import numpy as np
 import pickle as pkl
 import torch
 import torchvision
+from torchvision.datasets import ImageFolder
 from PIL import Image
 from torch.utils.data import Dataset
-
 
 
 class CubDataset(Dataset):
@@ -60,3 +60,17 @@ class CocoWrapper(torchvision.datasets.CocoCaptions):
         select_idx = np.random.randint(len(target), size=None)
         label = target[select_idx].replace('\n', '')
         return data, label
+
+
+if __name__ == '__main__':
+    dset = ImageFolder('../data/lfw')
+    # dset = ImageFolder('../data/sketch_images')
+    index = 110
+    # for index, data in enumerate(dset):
+
+    #     w, h = sketch_dataset[index][0].size
+    #     if w < 128 or h < 128:
+    #         print(index)
+    print(len(dset))
+    dset[index][0].show()
+    print(dset[index][0].size)

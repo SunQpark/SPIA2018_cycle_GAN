@@ -1,10 +1,44 @@
 import sys, os
 import torch
 import numpy as np
-sys.path.append('../')
+sys.path.append('./')
+from torchvision.datasets import ImageFolder
 from datasets import CubDataset, CocoWrapper
 from base import BaseDataLoader
 from torchvision import transforms
+
+
+class SketchDataLoader(BaseDataLoader):
+
+    def __init__(self, data_dir, batch_size, validation_split=0.0, validation_fold=0, shuffle=True, num_workers=4):
+        self.batch_size = batch_size
+        trsfm = transforms.Compose([
+            transforms.CenterCrop(256),
+            transforms.Resize(128),
+            transforms.ToTensor(),
+            # Normalization that every pytorch pretrained models expect 
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                  std=[0.229, 0.224, 0.225]),
+        ])
+        self.dataset = ImageFolder('../data/sketch_images', transform=trsfm)
+        super(SketchDataLoader, self).__init__(self.dataset, self.batch_size, shuffle, validation_split, validation_fold, num_workers,)
+
+
+class LfwDataLoader(BaseDataLoader):
+
+    def __init__(self, data_dir, batch_size, validation_split=0.0, validation_fold=0, shuffle=True, num_workers=4):
+        self.batch_size = batch_size
+        trsfm = transforms.Compose([
+            transforms.CenterCrop(256),
+            transforms.Resize(128),
+            transforms.ToTensor(),
+            # Normalization that every pytorch pretrained models expect 
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                  std=[0.229, 0.224, 0.225]),
+        ])
+        
+        self.dataset = ImageFolder('../data/lfw', transform=trsfm)
+        super(LfwDataLoader, self).__init__(self.dataset, self.batch_size, shuffle, validation_split, validation_fold, num_workers)
 
 
 class CocoDataLoader(BaseDataLoader):
@@ -58,10 +92,18 @@ class CubDataLoader(BaseDataLoader):
 
 
 if __name__ == '__main__':
-    cub_loader = CubDataLoader('../data/birds', 4)
-    coco_loader = CocoDataLoader('../cocoapi', 4)
+    # cub_loader = CubDataLoader('../data/birds', 4)
+    # coco_loader = CocoDataLoader('../cocoapi', 4)
 
-    for i, (data_coco, data_cub) in enumerate(zip(coco_loader, cub_loader)):
-        print(data_coco[0].shape)
-        print(data_cub[0].shape)
+    # for i, (data_coco, data_cub) in enumerate(zip(coco_loader, cub_loader)):
+    #     print(data_coco[0].shape)
+    #     print(data_cub[0].shape)
+    #     if i == 5: break
+
+    loader = SketchDataLoader('../data/sketch_images/human', 4)
+    # loader = LfwDataLoader('../data/lfw', 4)
+    for i, (data, target) in enumerate(loader):
+        print(data.shape)
+        print(target)
+        # print(data_cub[0].shape)
         if i == 5: break
