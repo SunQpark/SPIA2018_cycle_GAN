@@ -8,18 +8,17 @@ class BaseDataLoader(DataLoader):
     """
     Base class for all data loaders
     """
-    def __init__(self, dataset, batch_size, valid_batch_size, shuffle, validation_split, validation_fold, num_workers, collate_fn=default_collate):
+    def __init__(self, dataset, batch_size, shuffle, validation_split, validation_fold, num_workers, collate_fn=default_collate):
         """
         :param batch_size: Mini-batch size
         """
         self.dataset = dataset
         self.batch_size = batch_size
-        self.valid_batch_size = valid_batch_size
         self.shuffle = shuffle
         self._n_samples = len(self.dataset)
         self.num_workers = num_workers
         self.collate_fn = collate_fn
-        if validation_split is 0.0:
+        if validation_split == 0.0:
             self.sampler, self.valid_sampler = None, None
         else:
             self.sampler, self.valid_sampler = self._split_sampler(validation_split, validation_fold)
@@ -65,5 +64,5 @@ class BaseDataLoader(DataLoader):
         if self.valid_sampler is None:
             return None
         else:
-            valid_loader = DataLoader(**self.init_kwargs, sampler=self.valid_sampler, batch_size=self.valid_batch_size)
+            valid_loader = DataLoader(**self.init_kwargs, sampler=self.valid_sampler, batch_size=self.batch_size)
             return valid_loader
