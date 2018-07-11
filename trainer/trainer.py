@@ -96,6 +96,7 @@ class Trainer(BaseTrainer):
                     self.writer.add_scalar(f'{self.training_name}/Valid/{metric.__name__}', score, self.valid_iter)
 
             avg_val_loss = total_val_loss / len(self.valid_data_loader)
-            self.scheduler.step(avg_val_loss)
+            if self.scheduler is not None:
+                self.scheduler.step(avg_val_loss)
             avg_val_metrics = (total_val_metrics / len(self.valid_data_loader)).tolist()
         return {'val_loss': avg_val_loss, 'val_metrics': avg_val_metrics}
