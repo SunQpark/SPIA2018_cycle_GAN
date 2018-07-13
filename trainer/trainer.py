@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torchvision.utils import make_grid
 from torch.autograd import Variable
 from base import BaseTrainer
 
@@ -12,13 +13,15 @@ class Trainer(BaseTrainer):
         Inherited from BaseTrainer.
         Modify __init__() if you have additional arguments to pass.
     """
-    def __init__(self, model, loss, metrics, data_loader, optimizer, epochs,
+    def __init__(self, model, loss, recon_loss, metrics, data_loader, batch_size, optimizer, epochs,
                  save_dir, save_freq, resume, device, verbosity, training_name='',
                  valid_data_loader=None, train_logger=None, writer=None, lr_scheduler=None, monitor='loss', monitor_mode='min'):
         super(Trainer, self).__init__(model, loss, metrics, data_loader, valid_data_loader, optimizer, epochs,
                                       save_dir, save_freq, resume, verbosity, training_name,
                                       device, train_logger, writer, monitor, monitor_mode)
         self.scheduler = lr_scheduler
+        self.recon_loss = recon_loss
+        self.batch_size = batch_size
 
     def _train_epoch(self, epoch):
         """
@@ -38,32 +41,83 @@ class Trainer(BaseTrainer):
         self.model.to(self.device)
 
         total_loss = 0
+        data_loader = self.data_loader(self.batch_size)
+        # length = len(self.data_loader) #TODO: fix this
+        length = 400
+
         total_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (data, target) in enumerate(self.data_loader):
-            data, target = data.to(self.device), target.to(self.device)
+        for batch_idx, (data, label) in enumerate(data_loader):
+            data = data.to(self.device)
+            data_in_A = (label == 0)
 
-            self.optimizer.zero_grad()
-            output = self.model(data)
-            loss = self.loss(output, target)
-            loss.backward()
-            self.optimizer.step()
+            real_label = 1
+            fake_label = 0
+            for _, opt in self.optimizer.items():
+                opt.zero_grad()
+            #
+            # update discriminator with real data
+            #
+            if data_in_A:
+                direction = 'AtoB'
+                other = 'BtoA'
+                model = self.model.AtoB
+                rev_model = self.model.BtoA
+            else:
+                direction = 'BtoA'
+                other = 'AtoB'
+                model = self.model.BtoA
+                rev_model = self.model.AtoB
+
+            real_dis_score = rev_model.dis(data)
+            real_dis_loss = self.loss(real_dis_score, real_label)
+            real_dis_loss.backward()
+            self.optimizer[f'{other}_dis'].step()
+            #
+            # update gen, dis with fake data
+            #
+            fake_y = model.gen(data)
+            fake_dis_score = model.dis(fake_y.detach())
+            fake_dis_loss = self.loss(fake_dis_score, fake_label)
+            fake_dis_loss.backward()
+            self.optimizer[f'{direction}_dis'].step()
+
+            self.optimizer[f'{direction}_gen'].zero_grad()
+            fake_dis_score = model.dis(fake_y)
+            # update generator with gan loss, reconstruction loss
+            gen_loss = self.loss(fake_dis_score, real_label)
+
+            recon_x = rev_model.gen(fake_y)
+            recon_loss = self.recon_loss(recon_x, data)
+            gen_loss += recon_loss
+            gen_loss.backward()
+
+            self.optimizer[f'{direction}_gen'].step()
+            self.optimizer[f'{other}_gen'].step()
+
             self.train_iter += 1
-            self.writer.add_scalar(f'{self.training_name}/Train/loss', loss.item(), self.train_iter)
-            for i, metric in enumerate(self.metrics):
-                score = metric(output, target)
-                self.writer.add_scalar(f'{self.training_name}/Train/{metric.__name__}', score, self.train_iter)    
-                total_metrics[i] += score
-                
+            self.writer.add_scalar(f'{self.training_name}/gen_loss', gen_loss.item(), self.train_iter)
+            self.writer.add_scalar(f'{self.training_name}/recon_loss', recon_loss.item(), self.train_iter)
+            self.writer.add_scalar(f'{self.training_name}/dis_real_loss', real_dis_loss.item(), self.train_iter)
+            self.writer.add_scalar(f'{self.training_name}/dis_fake_loss', fake_dis_loss.item(), self.train_iter)
 
-            total_loss += loss.item()
+            loss = real_dis_loss.item() + fake_dis_loss.item() + gen_loss.item()
+            total_loss += loss
             log_step = int(np.sqrt(self.batch_size))
             if self.verbosity >= 2 and batch_idx % log_step == 0:
-                self.logger.info('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
-                    epoch, batch_idx * len(data), len(self.data_loader) * len(data),
-                    100.0 * batch_idx / len(self.data_loader), loss.item()))
+                img_orig = make_grid(data[0:16], nrow=4, normalize=True)
+                img_fake = make_grid(fake_y[0:16], nrow=4, normalize=True)
+                img_recon = make_grid(recon_x[0:16], nrow=4, normalize=True)
+                self.writer.add_image(f'{self.training_name}/image/original', img_orig, self.train_iter)
+                self.writer.add_image(f'{self.training_name}/image/translate', img_fake, self.train_iter)
+                self.writer.add_image(f'{self.training_name}/image/reconstruction', img_recon, self.train_iter)
+                
 
-        avg_loss = total_loss / len(self.data_loader)
-        avg_metrics = (total_metrics / len(self.data_loader)).tolist()
+                self.logger.info('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
+                    epoch, batch_idx * len(data), length * len(data),
+                    100.0 * batch_idx / length, loss))
+
+        avg_loss = total_loss / length
+        avg_metrics = (total_metrics / length).tolist()
         log = {'loss': avg_loss, 'metrics': avg_metrics}
 
         if self.valid:

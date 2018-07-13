@@ -18,7 +18,7 @@ class BaseTrainer:
         self.metrics = metrics
 
         self.data_loader = data_loader
-        self.batch_size = data_loader.batch_size
+        # self.batch_size = data_loader.batch_size
         self.valid_data_loader = valid_data_loader
         self.valid = True if self.valid_data_loader is not None else False
 
@@ -98,7 +98,7 @@ class BaseTrainer:
             'logger': self.train_logger,
             'arch': arch,
             'state_dict': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
+            # 'optimizer': self.optimizer.state_dict(),
             'monitor_best': self.monitor_best,
         }
         filename = os.path.join(self.checkpoint_dir,
@@ -124,10 +124,10 @@ class BaseTrainer:
 
         self.monitor_best = checkpoint['monitor_best']
         self.model.load_state_dict(checkpoint['state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer'])
-        for state in self.optimizer.state.values():
-            for k, v in state.items():
-                if isinstance(v, torch.Tensor):
-                    state[k] = v.to(self.device)
+        # self.optimizer.load_state_dict(checkpoint['optimizer'])
+        # for state in self.optimizer.state.values():
+        #     for k, v in state.items():
+        #         if isinstance(v, torch.Tensor):
+        #             state[k] = v.to(self.device)
         self.train_logger = checkpoint['logger']
         self.logger.info("Checkpoint '{}' (epoch {}) loaded".format(resume_path, self.start_epoch))

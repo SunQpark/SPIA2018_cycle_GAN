@@ -1,12 +1,13 @@
 import argparse
 import logging
 import torch
+import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from model.model import CycleGAN
 from model.loss import gan_loss
 # from model.metric import accuracy
-from data_loader import CocoDataLoader, CubDataLoader
+from data_loader import concat_loader
 from trainer import Trainer
 from logger import Logger
 from tensorboardX import SummaryWriter
@@ -16,10 +17,10 @@ writer = SummaryWriter('saved/runs')
 
 
 parser = argparse.ArgumentParser(description='PyTorch Template')
-parser.add_argument('-b', '--batch-size', default=32, type=int,
-                    help='mini-batch size (default: 32)')
-parser.add_argument('-e', '--epochs', default=32, type=int,
-                    help='number of total epochs (default: 32)')
+parser.add_argument('-b', '--batch-size', default=16, type=int,
+                    help='mini-batch size (default: 16)')
+parser.add_argument('-e', '--epochs', default=64, type=int,
+                    help='number of total epochs (default: 64)')
 parser.add_argument('--lr', default=0.0002, type=float,
                     help='learning rate (default: 0.0002)')
 parser.add_argument('--wd', default=0.0, type=float,
@@ -36,8 +37,8 @@ parser.add_argument('--data-dir', default='datasets', type=str,
                     help='directory of training/testing data (default: datasets)')
 parser.add_argument('--valid-batch-size', default=1000, type=int,
                     help='mini-batch size (default: 1000)')
-parser.add_argument('--validation-split', default=0.1, type=float,
-                    help='ratio of split validation data, [0.0, 1.0) (default: 0.1)')
+parser.add_argument('--validation-split', default=0.0, type=float,
+                    help='ratio of split validation data, [0.0, 1.0) (default: 0.0)')
 parser.add_argument('--validation-fold', default=0, type=int,
                     help='select part of data to be used as validation set (default: 0)')
 parser.add_argument('--no-cuda', action="store_true",
@@ -47,7 +48,7 @@ parser.add_argument('--no-cuda', action="store_true",
 def main(args):
     device = torch.device('cuda:0' if torch.cuda.is_available() and not args.no_cuda else 'cpu')
     # Model
-    model = CycleGAN
+    model = CycleGAN()
     model.summary()
 
     # A logger to store training process information
@@ -55,6 +56,8 @@ def main(args):
 
     # Specifying loss function, metric(s), and optimizer
     loss = gan_loss
+    recon_loss = nn.L1Loss()
+
     metrics = []
     # optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd, amsgrad=True)
     optimizer = {
@@ -66,16 +69,17 @@ def main(args):
     # lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
     # Data loader and validation split
-    data_loader = MnistDataLoader(args.data_dir, args.batch_size, args.valid_batch_size, args.validation_split, args.validation_fold, shuffle=True, num_workers=4)
-    valid_data_loader = data_loader.get_valid_loader()
+    data_loader = concat_loader
+    # valid_data_loader = data_loader.get_valid_loader()
 
     # An identifier for this training session
     training_name = type(model).__name__
 
     # Trainer instance
-    trainer = Trainer(model, loss, metrics,
+    trainer = Trainer(model, loss, recon_loss, metrics,
                       data_loader=data_loader,
-                      valid_data_loader=valid_data_loader,
+                      batch_size=args.batch_size,
+                    #   valid_data_loader=valid_data_loader,
                       optimizer=optimizer,
                       epochs=args.epochs,
                       train_logger=train_logger,
