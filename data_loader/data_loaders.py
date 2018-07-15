@@ -8,9 +8,6 @@ from base import BaseDataLoader
 from torchvision import transforms
 
 
-# def whitening(image):
-#     return image - torch.min(image)
-
 def normalize_sizes(image):
     resize = transforms.Resize(256)
     if min(image.size) > 400:
@@ -31,9 +28,6 @@ class SketchDataLoader(BaseDataLoader):
             transforms.CenterCrop(256),
             # transforms.Resize(128),
             transforms.ToTensor(),
-            # Normalization that every pytorch pretrained models expect 
-            transforms.Normalize(mean=[0.5],
-                                  std=[0.2]),
         ])
         self.dataset = ImageFolder('../data/sketch_images', transform=trsfm)
         super(SketchDataLoader, self).__init__(self.dataset, self.batch_size, shuffle, validation_split, validation_fold, num_workers,)
@@ -48,9 +42,6 @@ class LfwDataLoader(BaseDataLoader):
             transforms.CenterCrop(256),
             # transforms.Resize(128),
             transforms.ToTensor(),
-            # Normalization that every pytorch pretrained models expect 
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                  std=[0.229, 0.224, 0.225]),
         ])
         
         self.dataset = ImageFolder('../data/lfw', transform=trsfm)
@@ -68,9 +59,6 @@ class CocoDataLoader(BaseDataLoader):
             transforms.CenterCrop(256),
             # transforms.Resize(64),
             transforms.ToTensor(),
-            # Normalization that every pytorch pretrained models expect 
-            # transforms.Normalize(mean=[0.485, 0.456, 0.406],
-            #                       std=[0.229, 0.224, 0.225]),
         ])
         
         self.dataset = CocoWrapper(data_dir, transform=trsfm)
@@ -92,9 +80,6 @@ class CubDataLoader(BaseDataLoader):
             transforms.CenterCrop(256),
             # transforms.Resize(64),
             transforms.ToTensor(),
-            # Normalization that every pytorch pretrained models expect
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                  std=[0.229, 0.224, 0.225])
         ])
         
         self.dataset = CubDataset(data_dir, transform=trsfm)
@@ -105,14 +90,6 @@ class CubDataLoader(BaseDataLoader):
         target = torch.zeros((data.shape[0], ), dtype=torch.long)
         #TODO: implement target packing
         return data, target
-
-
-# class ConCat_Loaders(LfwDataLoader):
-#     def __init__(self, data_dir, batch_size, validation_split=0.0, validation_fold=0, shuffle=False, num_workers=4):
-#         self.skc_loader = SketchDataLoader('../data/sketch_images/human', 4) 
-#         self.lfw_loader = LfwDataLoader('../data/lfw', 4)
-#         self.s_gen = gen_wrapper(skc_loader)
-#         self.l_gen = gen_wrapper(lfw_loader)
 
 
 def gen_wrapper(loader):
