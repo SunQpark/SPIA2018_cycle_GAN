@@ -104,9 +104,9 @@ class Trainer(BaseTrainer):
             total_loss += loss
             log_step = int(np.sqrt(self.batch_size))
             if self.verbosity >= 2 and batch_idx % log_step == 0:
-                img_orig = make_grid(data[0:16], nrow=4, normalize=True)
-                img_fake = make_grid(fake_y[0:16], nrow=4, normalize=True)
-                img_recon = make_grid(recon_x[0:16], nrow=4, normalize=True)
+                img_orig = make_grid(data[0:16], nrow=4)
+                img_fake = make_grid(fake_y[0:16], nrow=4)
+                img_recon = make_grid(recon_x[0:16], nrow=4)
                 self.writer.add_image(f'{self.training_name}/image/original', img_orig, self.train_iter)
                 self.writer.add_image(f'{self.training_name}/image/translate', img_fake, self.train_iter)
                 self.writer.add_image(f'{self.training_name}/image/reconstruction', img_recon, self.train_iter)
