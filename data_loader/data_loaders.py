@@ -48,6 +48,21 @@ class LfwDataLoader(BaseDataLoader):
         super(LfwDataLoader, self).__init__(self.dataset, self.batch_size, shuffle, validation_split, validation_fold, num_workers)
 
 
+class CelebADataLoader(BaseDataLoader):
+
+    def __init__(self, data_dir, batch_size, validation_split=0.0, validation_fold=0, shuffle=True, num_workers=4):
+        self.batch_size = batch_size
+        trsfm = transforms.Compose([
+            # transforms.CenterCrop(256),
+            # transforms.Resize(128),
+            transforms.ToTensor(),
+        ])
+
+        self.dataset = ImageFolder(os.path.join(data_dir, 'CelebA/img'), transform=trsfm)
+        super(CelebADataLoader, self).__init__(self.dataset, self.batch_size, shuffle, validation_split, validation_fold, num_workers)
+
+
+
 class CocoDataLoader(BaseDataLoader):
     def __init__(self, data_dir, batch_size, validation_split=0.0, validation_fold=0, shuffle=False, num_workers=4):
         self.batch_size = batch_size
@@ -98,9 +113,10 @@ def gen_wrapper(loader):
 
 def concat_loader(batch_size=8):
     skc_loader = SketchDataLoader('../data/sketch_images/human', batch_size) 
-    lfw_loader = LfwDataLoader('../data/lfw', batch_size)
+    # lfw_loader = LfwDataLoader('../data/lfw', batch_size)
+    celeba_loader = CelebADataLoader('../data', batch_size)
     s_gen = gen_wrapper(skc_loader)
-    l_gen = gen_wrapper(lfw_loader)
+    l_gen = gen_wrapper(celeba_loader)
 
     skc_end = False
     lfw_end = False
@@ -141,7 +157,7 @@ if __name__ == '__main__':
     # skc_end = False
     # lfw_end = False
 
-    loader = concat_loader()
+    loader = CelebADataLoader('../data', 32)
     # print(type(skc_loader))
     # print(len(skc_loader))
     # data, target = skc_loader
@@ -149,8 +165,8 @@ if __name__ == '__main__':
     # print(target)
     for i, (data, target) in enumerate(loader):
         
-        # print(data.shape)
-        print(i, '\t', target)
-        # if i == 10: 
-        #     break
+        print(data.shape)
+        # print(i, '\t', target)
+        if i == 100: 
+            break
 

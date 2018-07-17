@@ -104,7 +104,7 @@ class Unet(nn.Module):
 
             # nn.ConvTranspose2d(n_features*16, n_features*8, 2, 2),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(out_ch, out_ch // 2, 3, 1, padding=1),
+            nn.Conv2d(n_features*16, n_features*8, 3, 1, padding=1),
         ])
         
         self.decoder = nn.Sequential(
@@ -140,7 +140,7 @@ class Unet(nn.Module):
             x = down_block(x)
             skip.append(x)
             x = F.max_pool2d(x, 2)
-
+        
         x = self.bottleneck(x)
 
         for up_block in self.decoder.children():
