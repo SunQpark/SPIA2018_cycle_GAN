@@ -17,11 +17,10 @@ class Trainer(BaseTrainer):
                  save_dir, save_freq, resume, device, verbosity, training_name='',
                  valid_data_loader=None, train_logger=None, writer=None, lr_scheduler=None, monitor='loss', monitor_mode='min'):
         super(Trainer, self).__init__(model, loss, metrics, data_loader, valid_data_loader, optimizer, epochs,
-                                      save_dir, save_freq, resume, verbosity, training_name,
+                                      batch_size, save_dir, save_freq, resume, verbosity, training_name,
                                       device, train_logger, writer, monitor, monitor_mode)
         self.scheduler = lr_scheduler
         self.recon_loss = recon_loss
-        self.batch_size = batch_size
 
     def _train_epoch(self, epoch):
         """
@@ -107,9 +106,9 @@ class Trainer(BaseTrainer):
                 img_orig = make_grid(data[0:16], nrow=4)
                 img_fake = make_grid(fake_y[0:16], nrow=4)
                 img_recon = make_grid(recon_x[0:16], nrow=4)
-                self.writer.add_image(f'{self.training_name}/image/original', img_orig, self.train_iter)
-                self.writer.add_image(f'{self.training_name}/image/translate', img_fake, self.train_iter)
-                self.writer.add_image(f'{self.training_name}/image/reconstruction', img_recon, self.train_iter)
+                self.writer.add_image(f'{self.training_name}/original', img_orig, self.train_iter)
+                self.writer.add_image(f'{self.training_name}/transfer', img_fake, self.train_iter)
+                self.writer.add_image(f'{self.training_name}/reconstruction', img_recon, self.train_iter)
                 
 
                 self.logger.info('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(

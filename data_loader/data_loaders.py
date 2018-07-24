@@ -1,15 +1,16 @@
 import sys, os
 import torch
+from torch.utils.data import ConcatDataset
 import numpy as np
-sys.path.append('./')
 from torchvision.datasets import ImageFolder
+sys.path.append('./')
 from datasets import CubDataset, CocoWrapper
 from base import BaseDataLoader
 from torchvision import transforms
 
 
 def normalize_sizes(image):
-    resize = transforms.Resize(256)
+    resize = transforms.Resize(192)
     if min(image.size) > 400:
         return resize(image)
     else:
@@ -17,25 +18,23 @@ def normalize_sizes(image):
 
 
 class SketchDataLoader(BaseDataLoader):
-
     def __init__(self, data_dir, batch_size, validation_split=0.0, validation_fold=0, shuffle=True, num_workers=4):
         self.batch_size = batch_size
         trsfm = transforms.Compose([
-            transforms.Pad(50, padding_mode='edge'),
-            transforms.ColorJitter(brightness=0.2),
+            # transforms.ColorJitter(brightness=0.2),
             transforms.Grayscale(),
-            normalize_sizes, 
-            transforms.CenterCrop(256),
+            # normalize_sizes,
+            # transforms.Pad(50, padding_mode='edge'),
+            # transforms.CenterCrop(256),
             # transforms.Resize(128),
             transforms.ToTensor(),
         ])
-        self.dataset = ImageFolder('../data/sketch_images', transform=trsfm)
+        self.dataset = ImageFolder(os.path.join(data_dir, 'aligned/sketch'), transform=trsfm)
         super(SketchDataLoader, self).__init__(self.dataset, self.batch_size, shuffle, validation_split, validation_fold, num_workers,)
 
 
 
 class LfwDataLoader(BaseDataLoader):
-
     def __init__(self, data_dir, batch_size, validation_split=0.0, validation_fold=0, shuffle=True, num_workers=4):
         self.batch_size = batch_size
         trsfm = transforms.Compose([
@@ -49,7 +48,6 @@ class LfwDataLoader(BaseDataLoader):
 
 
 class CelebADataLoader(BaseDataLoader):
-
     def __init__(self, data_dir, batch_size, validation_split=0.0, validation_fold=0, shuffle=True, num_workers=4):
         self.batch_size = batch_size
         trsfm = transforms.Compose([
@@ -58,9 +56,8 @@ class CelebADataLoader(BaseDataLoader):
             transforms.ToTensor(),
         ])
 
-        self.dataset = ImageFolder(os.path.join(data_dir, 'CelebA/img'), transform=trsfm)
+        self.dataset = ImageFolder(os.path.join(data_dir, 'aligned/picture'), transform=trsfm)
         super(CelebADataLoader, self).__init__(self.dataset, self.batch_size, shuffle, validation_split, validation_fold, num_workers)
-
 
 
 class CocoDataLoader(BaseDataLoader):
@@ -112,7 +109,7 @@ def gen_wrapper(loader):
         yield data
 
 def concat_loader(batch_size=8):
-    skc_loader = SketchDataLoader('../data/sketch_images/human', batch_size) 
+    skc_loader = SketchDataLoader('../data', batch_size) 
     # lfw_loader = LfwDataLoader('../data/lfw', batch_size)
     celeba_loader = CelebADataLoader('../data', batch_size)
     s_gen = gen_wrapper(skc_loader)
@@ -123,7 +120,7 @@ def concat_loader(batch_size=8):
     skc_label = 0
     lfw_label = 1
     # to iterate both data_loaders to the end, replace 'and' with 'or'
-    while not skc_end and not lfw_end:
+    while not skc_end or not lfw_end:
         flag = np.random.rand() > 0.5
         if flag:
             try:
@@ -137,6 +134,8 @@ def concat_loader(batch_size=8):
                 yield data, lfw_label
             except StopIteration:
                 lfw_end = True
+
+
 
 if __name__ == '__main__':
     # cub_loader = CubDataLoader('../data/birds', 4)

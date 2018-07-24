@@ -9,7 +9,7 @@ class BaseTrainer:
     """
     Base class for all trainers
     """
-    def __init__(self, model, loss, metrics, data_loader, valid_data_loader, optimizer, epochs,
+    def __init__(self, model, loss, metrics, data_loader, valid_data_loader, optimizer, epochs, batch_size,
                  save_dir, save_freq, resume, verbosity, training_name, device,
                  train_logger=None, writer=None, monitor='loss', monitor_mode='min'):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -18,7 +18,7 @@ class BaseTrainer:
         self.metrics = metrics
 
         self.data_loader = data_loader
-        # self.batch_size = data_loader.batch_size
+        self.batch_size = batch_size
         self.valid_data_loader = valid_data_loader
         self.valid = True if self.valid_data_loader is not None else False
 
@@ -119,8 +119,8 @@ class BaseTrainer:
         self.logger.info("Loading checkpoint: {} ...".format(resume_path))
         checkpoint = torch.load(resume_path)
         self.start_epoch = checkpoint['epoch'] + 1
-        self.train_iter = self.start_epoch * len(self.data_loader)
-        self.valid_iter = self.start_epoch * len(self.valid_data_loader)
+        self.train_iter = self.start_epoch * 400
+        # self.valid_iter = self.start_epoch * len(self.valid_data_loader)
 
         self.monitor_best = checkpoint['monitor_best']
         self.model.load_state_dict(checkpoint['state_dict'])
