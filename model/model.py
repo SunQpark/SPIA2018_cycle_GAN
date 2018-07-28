@@ -102,7 +102,6 @@ class Unet(nn.Module):
             self._make_block(n_features*8,  n_features*16),
             self._make_block(n_features*16, n_features*16),
 
-            # nn.ConvTranspose2d(n_features*16, n_features*8, 2, 2),
             nn.Upsample(scale_factor=2),
             nn.Conv2d(n_features*16, n_features*8, 3, 1, padding=1),
         ])
@@ -119,11 +118,11 @@ class Unet(nn.Module):
     def _make_block(self, in_ch, out_ch, upsample=False, activation=True):
         layers = [
             nn.Conv2d(in_ch, out_ch, 3, 1, padding=1),
-            nn.BatchNorm2d(out_ch),
+            nn.InstanceNorm2d(out_ch),
             nn.ReLU(inplace=True),
 
             nn.Conv2d(out_ch, out_ch, 3, 1, padding=1),
-            nn.BatchNorm2d(out_ch),
+            nn.InstanceNorm2d(out_ch),
         ]
         if activation:
             layers.append(nn.ReLU(inplace=True))
