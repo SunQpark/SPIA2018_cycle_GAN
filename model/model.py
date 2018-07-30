@@ -12,11 +12,11 @@ class BasicBlock(nn.Module):
     def __init__(self, in_ch, ch, stride=1):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(in_ch, ch, 3, stride, 1, bias=False)
-        self.bn1 = nn.BatchNorm2d(ch)
+        self.bn1 = nn.InstanceNorm2d(ch)
         self.relu = nn.ReLU(inplace=True)
 
         self.conv2 = nn.Conv2d(ch, ch, 3, 1, 1, bias=False)
-        self.bn2 = nn.BatchNorm2d(ch)
+        self.bn2 = nn.InstanceNorm2d(ch)
 
     def forward(self, x_input):
         residual = x_input
@@ -98,13 +98,13 @@ class Unet(nn.Module):
             self._make_block(n_features*4, n_features*8),
         )
         
-        self.bottleneck = nn.Sequential(*[
-            self._make_block(n_features*8,  n_features*16),
-            self._make_block(n_features*16, n_features*16),
+        self.bottleneck = nn.Sequential(
+            self._make_block(n_features*8,  n_features*16, groups=4),
+            self._make_block(n_features*16, n_features*16, groups=4),
 
             nn.Upsample(scale_factor=2),
             nn.Conv2d(n_features*16, n_features*8, 3, 1, padding=1),
-        ])
+        )
         
         self.decoder = nn.Sequential(
             self._make_block(n_features*16, n_features*8, upsample=True),
@@ -115,23 +115,22 @@ class Unet(nn.Module):
         self.output = nn.Conv2d(n_features, out_ch, 1, 1)
         
 
-    def _make_block(self, in_ch, out_ch, upsample=False, activation=True):
+    def _make_block(self, in_ch, out_ch, groups=1, upsample=False, activation=True):
         layers = [
-            nn.Conv2d(in_ch, out_ch, 3, 1, padding=1),
-            nn.InstanceNorm2d(out_ch),
-            nn.ReLU(inplace=True),
+            nn.Conv2d(in_ch, out_ch, 3, 1, padding=1, groups=groups),
+            nn.BatchNorm2d(out_ch),
+            nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(out_ch, out_ch, 3, 1, padding=1),
-            nn.InstanceNorm2d(out_ch),
+            nn.Conv2d(out_ch, out_ch, 3, 1, padding=1, groups=groups),
+            nn.BatchNorm2d(out_ch),
         ]
         if activation:
-            layers.append(nn.ReLU(inplace=True))
+            layers.append(nn.LeakyReLU(0.2, inplace=True))
         if upsample:
             layers.append(nn.Upsample(scale_factor=2))
             layers.append(nn.Conv2d(out_ch, out_ch // 2, 3, 1, padding=1))
 
         return nn.Sequential(*layers)
-
 
     def forward(self, x):
         skip = []
@@ -222,7 +221,6 @@ class CycleGAN(BaseModel):
 
 
 if __name__ == '__main__':
-    import torch
     # gen = ResNet()
     # dis = Discriminator()
 
