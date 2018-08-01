@@ -68,7 +68,7 @@ class Trainer(BaseTrainer):
                 rev_model = self.model.AtoB
 
             real_dis_score = rev_model.dis(data)
-            real_dis_loss = self.loss(real_dis_score, real_label)
+            real_dis_loss = self.loss(real_dis_score, real_label, noise_std=0.1, flip_threshold=0.01)
             real_dis_loss.backward()
             self.optimizer[f'{other}_dis'].step()
             #
@@ -76,14 +76,14 @@ class Trainer(BaseTrainer):
             #
             fake_y = model.gen(data)
             fake_dis_score = model.dis(fake_y.detach())
-            fake_dis_loss = self.loss(fake_dis_score, fake_label)
+            fake_dis_loss = self.loss(fake_dis_score, fake_label, noise_std=0.1, flip_threshold=0.01)
             fake_dis_loss.backward()
             self.optimizer[f'{direction}_dis'].step()
 
             self.optimizer[f'{direction}_gen'].zero_grad()
             fake_dis_score = model.dis(fake_y)
             # update generator with gan loss, reconstruction loss
-            gen_loss = self.loss(fake_dis_score, real_label)
+            gen_loss = self.loss(fake_dis_score, real_label, noise_std=0.1, flip_threshold=0.01)
 
             recon_x = rev_model.gen(fake_y)
             recon_loss = self.recon_loss(recon_x, data)
