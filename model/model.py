@@ -152,7 +152,7 @@ class Unet(nn.Module):
 
 class Discriminator(BaseModel):
 
-    def __init__(self, in_ch=3, n_size=4):
+    def __init__(self, in_ch=3):
         super(Discriminator, self).__init__()
         self.conv1 = nn.Conv2d(in_ch,   64, 4, 2, padding=1, bias=False)
         # self.inorm1 = nn.InstanceNorm2d(64)
