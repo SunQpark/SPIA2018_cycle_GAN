@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 from torchvision.utils import make_grid
-from torch.autograd import Variable
 from base import BaseTrainer
 
 

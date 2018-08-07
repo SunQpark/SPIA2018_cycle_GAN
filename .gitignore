@@ -106,3 +106,4 @@ venv.bak/
 
 .vscode
 Untitled.ipynb
+utils/shape_predictor_68_face_landmarks.dat

@@ -60,10 +60,10 @@ def main(args):
     metrics = []
     # optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd, amsgrad=True)
     optimizer = {
-        'AtoB_gen': optim.Adam(model.AtoB.gen.parameters(), lr=args.lr, weight_decay=args.wd, amsgrad=True),
-        'AtoB_dis': optim.Adam(model.AtoB.dis.parameters(), lr=args.lr, weight_decay=args.wd, amsgrad=True),
-        'BtoA_gen': optim.Adam(model.BtoA.gen.parameters(), lr=args.lr, weight_decay=args.wd, amsgrad=True),
-        'BtoA_dis': optim.Adam(model.BtoA.dis.parameters(), lr=args.lr, weight_decay=args.wd, amsgrad=True),        
+        'AtoB_gen': optim.Adam(model.AtoB.gen.parameters(), lr=args.lr, weight_decay=args.wd, betas=(0.5, 0.9), amsgrad=True),
+        'AtoB_dis': optim.Adam(model.AtoB.dis.parameters(), lr=args.lr, weight_decay=args.wd, betas=(0.5, 0.9), amsgrad=True),
+        'BtoA_gen': optim.Adam(model.BtoA.gen.parameters(), lr=args.lr, weight_decay=args.wd, betas=(0.5, 0.9), amsgrad=True),
+        'BtoA_dis': optim.Adam(model.BtoA.dis.parameters(), lr=args.lr, weight_decay=args.wd, betas=(0.5, 0.9), amsgrad=True),        
     }
     # lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
